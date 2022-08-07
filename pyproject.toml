@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pondpond"
+version = "1.0.0"
+authors = [
+  { name="Andy Qin", email="dr.qin@protonmail.com" },
+]
+description = "Pond is a high performance object-pooling library for Python."
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/t-baby/pond"
+"Bug Tracker" = "https://github.com/t-baby/pond/issues"
+"Blog" = "https://qin.news"

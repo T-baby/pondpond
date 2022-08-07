@@ -5,3 +5,5 @@ performance_evaluation.py
 draw.py
 /*/__pycache__/
 .DS_Store
+/dist
+/*/__pycache__
