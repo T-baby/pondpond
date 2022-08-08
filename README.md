@@ -1,5 +1,5 @@
 # Pond
-Pond is a high performance object-pooling library for Python, it has a smaller memory footprint and a higher hit rate.  For more details, see our user's guide or my blog（[https://qin.news](https://qin.news/pond/)）.
+Pond is a high performance object-pooling library for Python, it has a smaller memory usage and a higher borrow hit rate.  For more details, see our user's guide or my blog（[https://qin.news](https://qin.news/pond/)）.
 
 [English](https://github.com/T-baby/pondpond/blob/master/README.md) | [中文版](https://github.com/T-baby/pondpond/blob/master/README_ZH.md)
 
