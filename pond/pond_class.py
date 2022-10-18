@@ -12,12 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from asyncio import Queue
 import asyncio
 import math
-from threading import Thread
 import time
+from asyncio import Queue
+from threading import Thread
 from typing import Dict, Final, Optional
+
 from .count_min_sketch import CountMinSketch
 from .pooled_object import PooledObject
 from .pooled_object_factory import PooledObjectFactory

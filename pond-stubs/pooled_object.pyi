@@ -1,0 +1,9 @@
+from typing import Any
+
+class PooledObject:
+    create_time: float
+    last_borrow_time: float
+    keeped_object: object
+    def __init__(self, obj: Any) -> None: ...
+    def use(self) -> object: ...
+    def update_brrow_time(self) -> object: ...

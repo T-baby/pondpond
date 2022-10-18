@@ -26,9 +26,10 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-import hashlib
 import array
+import hashlib
 import math
+import typing as t
 
 
 class CountMinSketch(object):
@@ -57,29 +58,30 @@ class CountMinSketch(object):
     the user.
     """
 
-    def __init__(self, m, d):
-        """ `m` is the size of the hash tables, larger implies smaller
+    def __init__(self, m: int, d: int):
+        """`m` is the size of the hash tables, larger implies smaller
         overestimation. `d` the amount of hash tables, larger implies lower
         probability of overestimation.
         """
         if not m or not d:
-            raise ValueError("Table size (m) and amount of hash functions (d)"
-                             " must be non-zero")
-        self.m = m
-        self.d = d
-        self.n = 0
+            raise ValueError(
+                "Table size (m) and amount of hash functions (d)" " must be non-zero"
+            )
+        self.m: int = m
+        self.d: int = d
+        self.n: int = 0
         self.tables = []
         for _ in range(d):
             table = array.array("l", (0 for _ in range(m)))
             self.tables.append(table)
 
-    def _hash(self, x):
+    def _hash(self, x: t.Hashable):
         md5 = hashlib.md5(str(hash(x)).encode("utf-8"))
         for i in range(self.d):
             md5.update(str(i).encode("utf-8"))
             yield int(md5.hexdigest(), 16) % self.m
 
-    def add(self, x, value=1):
+    def add(self, x: t.Hashable, value: int = 1):
         """
         Count element `x` as if had appeared `value` times.
         By default `value=1` so:
@@ -93,17 +95,17 @@ class CountMinSketch(object):
             table[i] += value
             if table[i] >= 8:
                 for table in self.tables:
-                    for i,v in enumerate(table):
-                        table[i] = math.ceil(v/2)
+                    for i, v in enumerate(table):
+                        table[i] = math.ceil(v / 2)
 
-    def query(self, x):
+    def query(self, x: t.Hashable) -> int:
         """
         Return an estimation of the amount of times `x` has ocurred.
         The returned value always overestimates the real value.
         """
         return min(table[i] for table, i in zip(self.tables, self._hash(x)))
 
-    def __getitem__(self, x):
+    def __getitem__(self, x: t.Hashable):
         """
         A convenience method to call `query`.
         """
