@@ -31,7 +31,7 @@ class Pond(object):
     __time_between_eviction_runs: int
     __eviction_weight: float
 
-    def __init__(self, borrowed_timeout: int = 60, time_between_eviction_runs: int = 300, eviction_weight: float = 0.8, thread_daemon=True):
+    def __init__(self, borrowed_timeout: int = 60, time_between_eviction_runs: int = 300, eviction_weight: float = 0.8, thread_daemon=True, loop=asyncio.new_event_loop()):
         """Pond is a high performance object-pooling library for Python, it has
             a smaller memory usage and a higher hit rate.For more details,
             see our user's guide or my blog(https://qin.news).
@@ -47,7 +47,7 @@ class Pond(object):
                 the pond's thread is a daemon thread. Defaults to True.
         """
         self.__borrowed_timeout: int = borrowed_timeout
-        self.__loop = asyncio.new_event_loop()
+        self.__loop = loop
         self.__time_between_eviction_runs = time_between_eviction_runs
         self.__eviction_weight = eviction_weight
 

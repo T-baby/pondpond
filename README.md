@@ -79,6 +79,8 @@ Pond can be passed a number of parameters in:
 
 `eviction_weight`: Automatic recycling weight. Defaults to 0.8.
 
+`loop`: Automatic recycling weight. Defaults to 0.8.
+
 Creat a new instance of your custom class of fatory：
 
 ```python
