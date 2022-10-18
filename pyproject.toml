@@ -28,3 +28,13 @@ classifiers = [
 "Homepage" = "https://github.com/t-baby/pond"
 "Bug Tracker" = "https://github.com/t-baby/pond/issues"
 "Blog" = "https://qin.news"
+
+[tool.hatch.build]
+include = [
+  "pond/*.py",
+  "pond/*.typed"
+
+]
+exclude = [
+  "/tests"
+]
