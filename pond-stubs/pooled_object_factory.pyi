@@ -1,8 +1,6 @@
 import abc
-
-from _typeshed import Incomplete
-
 from .pooled_object import PooledObject as PooledObject
+from _typeshed import Incomplete
 
 class PooledObjectFactory(metaclass=abc.ABCMeta):
     pooled_maxsize: Incomplete
@@ -11,7 +9,7 @@ class PooledObjectFactory(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def creatInstantce(self) -> PooledObject: ...
     @abc.abstractmethod
-    def destroy(self, pooled_object: PooledObject): ...
+    def destroy(self, pooled_object: PooledObject) -> None: ...
     @abc.abstractmethod
     def reset(self, pooled_object: PooledObject) -> PooledObject: ...
     @abc.abstractmethod

@@ -8,3 +8,4 @@ draw.py
 /dist
 /*/__pycache__
 .pdm.toml
+out/

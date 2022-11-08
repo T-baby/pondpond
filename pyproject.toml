@@ -49,3 +49,4 @@ dev = [
 [tool.pdm.scripts]
 format.shell = "black . && isort . && mypy . --config-file mypy.ini"
 test.shell = "pytest -s ./tests"
+stubgen.shell = "rm -r ./pond-stubs && stubgen ./pond -o ./out && cp -r ./out/pond ./pond-stubs"
