@@ -1,6 +1,8 @@
 import abc
-from .pooled_object import PooledObject as PooledObject
+
 from _typeshed import Incomplete
+
+from .pooled_object import PooledObject as PooledObject
 
 class PooledObjectFactory(metaclass=abc.ABCMeta):
     pooled_maxsize: Incomplete

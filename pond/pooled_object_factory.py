@@ -18,7 +18,6 @@ from .pooled_object import PooledObject
 
 
 class PooledObjectFactory(metaclass=abc.ABCMeta):
-
     def __init__(self, pooled_maxsize: int = 8, least_one: bool = False) -> None:
         self.pooled_maxsize = pooled_maxsize
         self.least_one = least_one
@@ -28,7 +27,7 @@ class PooledObjectFactory(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def destroy(self, pooled_object: PooledObject):
+    def destroy(self, pooled_object: PooledObject) -> None:
         pass
 
     @abc.abstractmethod

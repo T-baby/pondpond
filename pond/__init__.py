@@ -13,5 +13,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from .pond_class import Pond as Pond
-from .pooled_object_factory import PooledObjectFactory as PooledObjectFactory
 from .pooled_object import PooledObject as PooledObject
+from .pooled_object_factory import PooledObjectFactory as PooledObjectFactory

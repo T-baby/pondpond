@@ -75,13 +75,13 @@ class CountMinSketch(object):
             table = array.array("l", (0 for _ in range(m)))
             self.tables.append(table)
 
-    def _hash(self, x: t.Hashable):
+    def _hash(self, x: t.Hashable) -> t.Generator[int, None, None]:
         md5 = hashlib.md5(str(hash(x)).encode("utf-8"))
         for i in range(self.d):
             md5.update(str(i).encode("utf-8"))
             yield int(md5.hexdigest(), 16) % self.m
 
-    def add(self, x: t.Hashable, value: int = 1):
+    def add(self, x: t.Hashable, value: int = 1) -> None:
         """
         Count element `x` as if had appeared `value` times.
         By default `value=1` so:
@@ -105,13 +105,13 @@ class CountMinSketch(object):
         """
         return min(table[i] for table, i in zip(self.tables, self._hash(x)))
 
-    def __getitem__(self, x: t.Hashable):
+    def __getitem__(self, x: t.Hashable) -> int:
         """
         A convenience method to call `query`.
         """
         return self.query(x)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         The amount of things counted. Takes into account that the `value`
         argument of `add` might be different from 1.

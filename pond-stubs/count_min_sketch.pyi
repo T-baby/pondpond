@@ -1,4 +1,5 @@
 import typing as t
+
 from _typeshed import Incomplete
 
 class CountMinSketch:

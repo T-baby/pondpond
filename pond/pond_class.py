@@ -15,9 +15,11 @@ limitations under the License.
 import asyncio
 import math
 import time
-from asyncio import Queue
+from asyncio import AbstractEventLoop
+from queue import Queue
 from threading import Thread
-from typing import Dict, Final, Optional
+from typing import (TYPE_CHECKING, Any, Callable, Coroutine, Dict, Final,
+                    Optional)
 
 from .count_min_sketch import CountMinSketch
 from .pooled_object import PooledObject
@@ -26,13 +28,25 @@ from .pooled_object_factory import PooledObjectFactory
 
 class Pond(object):
     __class_dict: Final[Dict[str, PooledObjectFactory]] = dict()
-    __pooled_object_tree: Final[Dict[str, Queue]] = dict()
+    # In Python 3.8 and earlier, there are several examples within the standard library,
+    # for instance, os.PathLike and queue.Queue.
+    if TYPE_CHECKING:
+        __pooled_object_tree: Final[Dict[str, Queue[PooledObject]]] = dict()
+    else:
+        __pooled_object_tree: Final[Dict[str, Queue]] = dict()
     __borrowed_timeout: int = 8
     counter: CountMinSketch = CountMinSketch(28, 3)
     __time_between_eviction_runs: int
     __eviction_weight: float
 
-    def __init__(self, borrowed_timeout: int = 60, time_between_eviction_runs: int = 300, eviction_weight: float = 0.8, thread_daemon=True, loop=asyncio.new_event_loop()):
+    def __init__(
+        self,
+        borrowed_timeout: int = 60,
+        time_between_eviction_runs: int = 300,
+        eviction_weight: float = 0.8,
+        thread_daemon: bool = True,
+        loop: AbstractEventLoop = asyncio.new_event_loop(),
+    ) -> None:
         """Pond is a high performance object-pooling library for Python, it has
             a smaller memory usage and a higher hit rate.For more details,
             see our user's guide or my blog(https://qin.news).
@@ -52,17 +66,22 @@ class Pond(object):
         self.__time_between_eviction_runs = time_between_eviction_runs
         self.__eviction_weight = eviction_weight
 
-        def loop_runner(loop, function):
+        def loop_runner(
+            loop: AbstractEventLoop, function: Coroutine[Any, Any, None]
+        ) -> None:
             asyncio.set_event_loop(loop)
             loop.create_task(function)
             loop.run_forever()
 
-        self.__thread = Thread(target=loop_runner, args=(
-            self.__loop, self.__eviction()))
+        self.__thread = Thread(
+            target=loop_runner, args=(self.__loop, self.__eviction())
+        )
         self.__thread.setDaemon(thread_daemon)
         self.__thread.start()
 
-    def register(self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None):
+    def register(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> None:
         """Registering the factory object with Pond will use the class name of
             the factory as the key for the PooledObjectTree by default.After
             successful registration, Pond will automatically start creating
@@ -79,23 +98,23 @@ class Pond(object):
             ValueError: The factoryClass existed in the PooledObjectTree!
             ValueError: The instance must not be null!
         """
-        if not name:
+        if name is None:
+            assert factory is not None
             name = factory.factory_name()
+        assert factory is not None
         if self.__pooled_object_tree.__contains__(name):
-            raise ValueError(
-                "The factoryClass existed in the PooledObjectTree!")
+            raise ValueError("The factoryClass existed in the PooledObjectTree!")
         self.__class_dict[name] = factory
-        self.__pooled_object_tree[name] = Queue(
-            maxsize=factory.pooled_maxsize)
+        self.__pooled_object_tree[name] = Queue(maxsize=factory.pooled_maxsize)
         for i in range(factory.pooled_maxsize):
             instance = self.__class_dict[name].creatInstantce()
             if instance is None:
-                raise ValueError(
-                    "The instance must not be null!")
-            self.__pooled_object_tree[name].put_nowait(
-                instance)
+                raise ValueError("The instance must not be null!")
+            self.__pooled_object_tree[name].put(instance)
 
-    def borrow(self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None) -> PooledObject:
+    def borrow(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> PooledObject:
         """You can use factory object or factory name to borrow and return
             objects from the object pool.
 
@@ -109,21 +128,27 @@ class Pond(object):
             PooledObject: The pooled object you want to borrow.
         """
         if not name:
+            assert factory is not None
             name = factory.factory_name()
         if self.is_empty(name=name):
             self.counter.add(name)
             return self.__class_dict[name].creatInstantce()
-        pooled_object = self.__pooled_object_tree[name].get_nowait()
+        pooled_object = self.__pooled_object_tree[name].get()
         while not self.__class_dict[name].validate(pooled_object):
             self.__clear_one_object(pooled_object, name=name)
             if self.is_empty(name=name):
                 pooled_object = self.__class_dict[name].creatInstantce()
             else:
-                pooled_object = self.__pooled_object_tree[name].get_nowait()
+                pooled_object = self.__pooled_object_tree[name].get()
         self.counter.add(name)
         return pooled_object.update_brrow_time()
 
-    def recycle(self, pooled_object: PooledObject, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None):
+    def recycle(
+        self,
+        pooled_object: PooledObject,
+        factory: Optional[PooledObjectFactory] = None,
+        name: Optional[str] = None,
+    ) -> None:
         """You can use factory object or factory name to borrow and return
             objects from the object pool.
 
@@ -134,6 +159,7 @@ class Pond(object):
                 Defaults to None.
         """
         if not name:
+            assert factory is not None
             name = factory.factory_name()
         if not isinstance(pooled_object, PooledObject):
             raise ValueError("Only PooledObject can be recycled!")
@@ -144,10 +170,13 @@ class Pond(object):
             self.__clear_one_object(pooled_object, name=name)
             return
 
-        self.__pooled_object_tree[name].put_nowait(
-            self.__class_dict[name].reset(pooled_object))
+        self.__pooled_object_tree[name].put(
+            self.__class_dict[name].reset(pooled_object)
+        )
 
-    def clear(self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None):
+    def clear(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> None:
         """You can use factory object or factory name to clear the object pool.
 
         Args:
@@ -157,31 +186,38 @@ class Pond(object):
                 Defaults to None.
         """
         if not name:
+            assert factory is not None
             name = factory.factory_name()
         while not self.is_empty(name=name):
-            pooled_object = self.__pooled_object_tree[name].get_nowait()
+            pooled_object = self.__pooled_object_tree[name].get()
             self.__clear_one_object(pooled_object, name=name)
 
-    def __clear_one_object(self, pooled_object: PooledObject, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None):
+    def __clear_one_object(
+        self,
+        pooled_object: PooledObject,
+        factory: Optional[PooledObjectFactory] = None,
+        name: Optional[str] = None,
+    ) -> None:
         if not name:
+            assert factory is not None
             name = factory.factory_name()
         self.__class_dict[name].destroy(pooled_object)
         del pooled_object
 
     def size(self) -> int:
-        """Query how many object pools there are in pooled_object_tree.
-        """
+        """Query how many object pools there are in pooled_object_tree."""
         return len(self.__pooled_object_tree)
 
     def count_total_objects(self) -> int:
-        """Query how many objects there are in pooled_object_tree.
-        """
+        """Query how many objects there are in pooled_object_tree."""
         total_number = 0
         for k, v in self.__pooled_object_tree.items():
             total_number = total_number + v.qsize()
         return total_number
 
-    def pooled_object_size(self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None) -> int:
+    def pooled_object_size(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> int:
         """Query how many objects there are in the specified object pool.
 
         Args:
@@ -192,10 +228,13 @@ class Pond(object):
             int: Size of the specified object pool.
         """
         if not name:
+            assert factory is not None
             name = factory.factory_name()
         return self.__pooled_object_tree[name].qsize()
 
-    def is_full(self,  factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None) -> bool:
+    def is_full(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> bool:
         """Check to see if the supplied object pool is filled.
 
         Args:
@@ -206,10 +245,13 @@ class Pond(object):
             bool: Whether the object pool is full.
         """
         if not name:
+            assert factory is not None
             name = factory.factory_name()
         return self.__pooled_object_tree[name].full()
 
-    def is_empty(self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None) -> bool:
+    def is_empty(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> bool:
         """Check to see if the supplied object pool is emptied.
 
         Args:
@@ -220,38 +262,38 @@ class Pond(object):
             bool: Whether the object pool is empty.
         """
         if not name:
+            assert factory is not None
             name = factory.factory_name()
         return self.__pooled_object_tree[name].empty()
 
-    def __reset_counter(self):
+    def __reset_counter(self) -> None:
         n = self.size()
         if n == 0:
             epsilon = 0.1
         else:
-            epsilon = 10/n
+            epsilon = 10 / n
         if epsilon >= 1:
             epsilon = 0.1
-        m = math.ceil(math.e/epsilon)
-        d = math.ceil(math.log(1/0.1))
+        m = math.ceil(math.e / epsilon)
+        d = math.ceil(math.log(1 / 0.1))
         if not m == self.counter.m or not d == self.counter.d:
             self.counter: CountMinSketch = CountMinSketch(m, d)
 
-    def stop(self):
-        """Stop the pone and all objects in the pooled object tree will be destroyed.
-        """
+    def stop(self) -> None:
+        """Stop the pone and all objects in the pooled object tree will be destroyed."""
         self.__loop.stop()
         self.__time_between_eviction_runs = -1
         for key in self.__pooled_object_tree.keys():
             self.clear(name=key)
 
-    async def __eviction(self, debug=False):
+    async def __eviction(self, debug: bool = False) -> None:
         first_run = True
         while self.__time_between_eviction_runs > 0:
             if first_run:
                 first_run = False
                 await asyncio.sleep(self.__time_between_eviction_runs)
                 continue
-            pooled_object_borrow_count: dict[str, int] = {}
+            pooled_object_borrow_count: Dict[str, int] = {}
             max_count = 0
             for key in self.__pooled_object_tree.keys():
                 pooled_object_borrow_count[key] = self.counter[key]
@@ -263,9 +305,11 @@ class Pond(object):
                 try:
                     if value < boundary and size > 0:
                         if size > 1:
-                            for i in range(int(size/2)):
+                            for i in range(int(size / 2)):
                                 self.__clear_one_object(
-                                    self.__pooled_object_tree[key].get_nowait(), name=key)
+                                    self.__pooled_object_tree[key].get(),
+                                    name=key,
+                                )
                         else:
                             if not self.__class_dict[key].least_one:
                                 self.clear(name=key)

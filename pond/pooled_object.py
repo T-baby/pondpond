@@ -12,24 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# https://peps.python.org/pep-0563/
+from __future__ import annotations
+
 import time
 from typing import Any
 
 
-class PooledObject(object):
+class PooledObject:
     create_time: float
     last_borrow_time: float
-    keeped_object:object
+    keeped_object: Any
 
-    def __init__(self, obj:Any) -> None:
+    def __init__(self, obj: Any) -> None:
         self.create_time = time.time()
         self.last_borrow_time = time.time()
         self.keeped_object = obj
 
-    def use(self) -> object:
+    def use(self) -> Any:
         return self.keeped_object
 
-    def update_brrow_time(self) -> object:
+    def update_brrow_time(self) -> PooledObject:
         self.last_borrow_time = time.time()
         return self
-
