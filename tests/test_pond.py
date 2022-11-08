@@ -149,10 +149,9 @@ def test_borrow_when_queue_empty() -> None:
 
 
 @pytest.mark.run(order=4)
-@pytest.mark.asyncio
 async def test_eviction() -> None:
-    pond._Pond__time_between_eviction_runs = 1 #type: ignore
-    await pond._Pond__eviction(debug=True) #type: ignore
+    pond._Pond__time_between_eviction_runs = 1  # type: ignore
+    await pond._Pond__eviction(debug=True)  # type: ignore
 
 
 @pytest.mark.run(order=998)

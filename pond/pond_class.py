@@ -18,7 +18,7 @@ import time
 from asyncio import AbstractEventLoop
 from queue import Queue
 from threading import Thread
-from typing import (TYPE_CHECKING, Any, Callable, Coroutine, Dict, Final,
+from typing import (TYPE_CHECKING, Any, Coroutine, Dict, Final,
                     Optional)
 
 from .count_min_sketch import CountMinSketch
@@ -27,25 +27,13 @@ from .pooled_object_factory import PooledObjectFactory
 
 
 class Pond(object):
-    __class_dict: Final[Dict[str, PooledObjectFactory]] = dict()
-    # In Python 3.8 and earlier, there are several examples within the standard library,
-    # for instance, os.PathLike and queue.Queue.
-    if TYPE_CHECKING:
-        __pooled_object_tree: Final[Dict[str, Queue[PooledObject]]] = dict()
-    else:
-        __pooled_object_tree: Final[Dict[str, Queue]] = dict()
-    __borrowed_timeout: int = 8
-    counter: CountMinSketch = CountMinSketch(28, 3)
-    __time_between_eviction_runs: int
-    __eviction_weight: float
-
     def __init__(
         self,
         borrowed_timeout: int = 60,
         time_between_eviction_runs: int = 300,
         eviction_weight: float = 0.8,
         thread_daemon: bool = True,
-        loop: AbstractEventLoop = asyncio.new_event_loop(),
+        loop: Optional[AbstractEventLoop] = None,
     ) -> None:
         """Pond is a high performance object-pooling library for Python, it has
             a smaller memory usage and a higher hit rate.For more details,
@@ -62,9 +50,21 @@ class Pond(object):
                 the pond's thread is a daemon thread. Defaults to True.
         """
         self.__borrowed_timeout: int = borrowed_timeout
-        self.__loop = loop
+        if loop is not None:
+            self.__loop = loop
+        else:
+            self.__loop = asyncio.new_event_loop()
         self.__time_between_eviction_runs = time_between_eviction_runs
         self.__eviction_weight = eviction_weight
+        self.__async_lock = asyncio.Lock()
+        self.__class_dict: Final[Dict[str, PooledObjectFactory]] = dict()
+        # In Python 3.8 and earlier, there are several examples within the standard library,
+        # for instance, os.PathLike and queue.Queue.
+        if TYPE_CHECKING:
+            self.__pooled_object_tree: Final[Dict[str, Queue[PooledObject]]] = dict()
+        else:
+            self.__pooled_object_tree: Final[Dict[str, Queue]] = dict()
+        self.counter: CountMinSketch = CountMinSketch(28, 3)
 
         def loop_runner(
             loop: AbstractEventLoop, function: Coroutine[Any, Any, None]
@@ -277,7 +277,7 @@ class Pond(object):
         m = math.ceil(math.e / epsilon)
         d = math.ceil(math.log(1 / 0.1))
         if not m == self.counter.m or not d == self.counter.d:
-            self.counter: CountMinSketch = CountMinSketch(m, d)
+            self.counter = CountMinSketch(m, d)
 
     def stop(self) -> None:
         """Stop the pone and all objects in the pooled object tree will be destroyed."""
@@ -319,3 +319,30 @@ class Pond(object):
             if debug:
                 self.__time_between_eviction_runs = -1
             await asyncio.sleep(self.__time_between_eviction_runs)
+
+    async def async_register(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> None:
+        async with self.__async_lock:
+            self.register(factory=factory, name=name)
+
+    async def async_borrow(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> PooledObject:
+        async with self.__async_lock:
+            return self.borrow(factory=factory, name=name)
+
+    async def async_recycle(
+        self,
+        pooled_object: PooledObject,
+        factory: Optional[PooledObjectFactory] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        async with self.__async_lock:
+            self.recycle(pooled_object=pooled_object, factory=factory, name=name)
+
+    async def async_clear(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> None:
+        async with self.__async_lock:
+            self.clear(factory=factory, name=name)
