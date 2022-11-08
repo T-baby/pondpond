@@ -22,6 +22,7 @@ Ponds are thread-safe for borrowing and recycling, and Python's queue module pro
 
 The auto-recycle is executed at regular intervals, 300s by default. Automatically cleans up the objects in the infrequently used object pool.
 
+> It is recommended that you use Python 3.8 or greater.
 
 # User guide
 
