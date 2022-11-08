@@ -1,41 +1,51 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+build-backend = "pdm.pep517.api"
+requires = ["pdm-pep517>=1.0.0"]
 
 [project]
-name = "pondpond"
-version = "1.1.0"
 authors = [
-  { name="Andy Qin", email="dr.qin@protonmail.com" },
+  {name = "Andy Qin", email = "dr.qin@protonmail.com"},
 ]
+dependencies = []
 description = "Pond is a high performance object-pooling library for Python."
+license = {file = "LICENSE"}
+name = "pondpond"
 readme = "README.md"
-license = { file="LICENSE" }
-requires-python = ">=3.7"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Operating System :: OS Independent",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Software Development :: Libraries",
-    "Topic :: Software Development",
-]
+requires-python = ">=3.8"
+version = "1.2.0"
 
 [project.urls]
-"Homepage" = "https://github.com/t-baby/pond"
-"Bug Tracker" = "https://github.com/t-baby/pond/issues"
 "Blog" = "https://qin.news"
+"Bug Tracker" = "https://github.com/t-baby/pond/issues"
+"Homepage" = "https://github.com/t-baby/pond"
 
-[tool.hatch.build]
-include = [
+[project.optional-dependencies]
+
+[tool.pdm.build]
+excludes = [
+  "/tests",
+]
+includes = [
   "pond/*.py",
   "pond/*.typed",
-  "pond-stubs/*.pyi"
+  "pond-stubs/*.pyi",
+]
+source-includes = [
+  "tests/",
+]
 
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest>=7.2.0",
+    "pytest-ordering>=0.6",
+    "pytest-asyncio>=0.20.1",
+    "pytest-cov>=4.0.0",
+    "black>=22.10.0",
+    "mypy>=0.990",
+    "isort>=5.10.1",
 ]
-exclude = [
-  "/tests"
-]
+
+[tool.pdm.scripts]
+format.shell = "black . && isort . && mypy . --config-file mypy.ini"
+test.shell = "pytest -s ./tests"
