@@ -106,12 +106,16 @@ pond.register(factory, name="PuppyFactory")
 
 If the register succeeds, the Pond will begin creating objects based on the pooled_maxsize set in the factory until the pool is full.
 
-Borrow and recycle object:
+Borrow and recycle object(You can also use coroutine function with coroutine locks):
 
 ```python
 pooled_object: PooledObject = pond.borrow(factory)
+# or
+pooled_object: PooledObject = pond.async_borrow(factory)
 dog: Dog = pooled_object.use()
 pond.recycle(pooled_object, factory)
+# or
+pond.async_recycle(pooled_object, factory)
 ```
 
 Borrow and recycle object by name:
@@ -126,6 +130,8 @@ Clear a object pool:
 
 ```python
 pond.clear(factory)
+# or
+pond.async_clear(factory)
 ```
 
 Clear a object pool by name:

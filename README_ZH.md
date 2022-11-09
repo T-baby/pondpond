@@ -137,12 +137,16 @@ pond.register(factory, name="PuppyFactory")
 
 注册成功后，Pond 会自动根据 factory 中设置的 pooled_maxsize 自动开始创建对象直至填满这个对象池。
 
-借用和归还对象：
+借用和归还对象（你还可以使用带协程锁的协程方法）：
 
 ```python
 pooled_object: PooledObject = pond.borrow(factory)
+# or
+pooled_object: PooledObject = pond.async_borrow(factory)
 dog: Dog = pooled_object.use()
 pond.recycle(pooled_object, factory)
+# or
+pond.async_recycle(pooled_object, factory)
 ```
 
 当然你可以用名字来进行借用和归还：
@@ -157,6 +161,8 @@ pond.recycle(pooled_object, name="PuppyFactory")
 
 ```python
 pond.clear(factory)
+# or
+pond.async_clear(factory)
 ```
 
 通过名字清理一个对象池：
