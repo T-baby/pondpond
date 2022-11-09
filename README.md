@@ -18,7 +18,7 @@ The default policy and weights reduce the memory usage by 45.7% and the borrow h
 
 Using Pond requires the implementation of an object factory, PooledObjectFactory, which provides object creation, initialization, destruction, validation, and other operations called by Pond. So in order for the object pool to support holding completely different objects, Pond uses a dictionary to save the name of each factory class and the instantiated objects of the factory class it implements.
 
-Ponds are thread-safe for borrowing and recycling, and Python's queue module provides a first-in, first-out (FIFO) data structure for multi-threaded programming. It can be used to safely pass messages or other data between producer and consumer threads. Locks are handled by the caller, and all multiple threads can safely and easily work with the same Queue instance. The borrowing and recycling of a Pond is all about manipulating the queue, so it is basically considered thread-safe.
+Ponds are thread-safe and coroutine-safe for borrowing and recycling, and Python's queue module provides a first-in, first-out (FIFO) data structure for multi-threaded programming. It can be used to safely pass messages or other data between producer and consumer threads. Locks are handled by the caller, and all multiple threads can safely and easily work with the same Queue instance. The borrowing and recycling of a Pond is all about manipulating the queue, so it is basically considered thread-safe.
 
 The auto-recycle is executed at regular intervals, 300s by default. Automatically cleans up the objects in the infrequently used object pool.
 
