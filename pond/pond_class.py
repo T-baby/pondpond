@@ -18,8 +18,7 @@ import time
 from asyncio import AbstractEventLoop
 from queue import Queue
 from threading import Thread
-from typing import (TYPE_CHECKING, Any, Coroutine, Dict, Final,
-                    Optional)
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, Final, Optional
 
 from .count_min_sketch import CountMinSketch
 from .pooled_object import PooledObject
@@ -215,14 +214,31 @@ class Pond(object):
             total_number = total_number + v.qsize()
         return total_number
 
+    def contains(
+        self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
+    ) -> bool:
+        """Return true if the specified factory has been registered in the pond.
+
+        Args:
+            factory (Optional[PooledObjectFactory], optional): The specified factory object. Defaults to None.
+            name (Optional[str], optional): The specified factory name. Defaults to None.
+
+        Returns:
+            bool: Return true if the specified factory has been registered in the pond.
+        """
+        if name is None:
+            assert factory is not None
+            name = factory.factory_name()
+        return self.__pooled_object_tree.__contains__(name)
+
     def pooled_object_size(
         self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
     ) -> int:
         """Query how many objects there are in the specified object pool.
 
         Args:
-            factory (Optional[PooledObjectFactory], optional): _description_. Defaults to None.
-            name (Optional[str], optional): _description_. Defaults to None.
+            factory (Optional[PooledObjectFactory], optional): The specified factory object. Defaults to None.
+            name (Optional[str], optional): The specified factory name. Defaults to None.
 
         Returns:
             int: Size of the specified object pool.
@@ -238,8 +254,8 @@ class Pond(object):
         """Check to see if the supplied object pool is filled.
 
         Args:
-            factory (Optional[PooledObjectFactory], optional): _description_. Defaults to None.
-            name (Optional[str], optional): _description_. Defaults to None.
+            factory (Optional[PooledObjectFactory], optional): The specified factory object. Defaults to None.
+            name (Optional[str], optional): The specified factory name. Defaults to None.
 
         Returns:
             bool: Whether the object pool is full.
@@ -255,8 +271,8 @@ class Pond(object):
         """Check to see if the supplied object pool is emptied.
 
         Args:
-            factory (Optional[PooledObjectFactory], optional): _description_. Defaults to None.
-            name (Optional[str], optional): _description_. Defaults to None.
+            factory (Optional[PooledObjectFactory], optional): The specified factory object. Defaults to None.
+            name (Optional[str], optional): The specified factory name. Defaults to None.
 
         Returns:
             bool: Whether the object pool is empty.

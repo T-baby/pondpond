@@ -50,6 +50,12 @@ def test_register_by_name() -> None:
     assert pond.size() == 2
 
 
+@pytest.mark.run(order=1)
+def test_contains() -> None:
+    assert pond.contains(name="PuppyFactory")
+    assert pond.contains(name="Notfound") is False
+
+
 @pytest.mark.run(order=2)
 def test_pooled_object_size() -> None:
     assert pond.pooled_object_size(factory) == pooled_maxsize

@@ -12,7 +12,7 @@ license = {file = "LICENSE"}
 name = "pondpond"
 readme = "README.md"
 requires-python = ">=3.8"
-version = "1.2.0"
+version = "1.2.1"
 
 [project.urls]
 "Blog" = "https://qin.news"
