@@ -76,7 +76,7 @@ class Pond(object):
         self.__thread = Thread(
             target=loop_runner, args=(self.__loop, self.__eviction())
         )
-        self.__thread.setDaemon(thread_daemon)
+        self.__thread.daemon = thread_daemon
         self.__thread.start()
 
     def register(
