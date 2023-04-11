@@ -18,7 +18,8 @@ import time
 from asyncio import AbstractEventLoop
 from collections import deque
 from threading import Thread
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, Final, Optional, Deque
+from typing import TYPE_CHECKING, Any, Coroutine, Deque, Dict, Final, Optional
+
 from .count_min_sketch import CountMinSketch
 from .pooled_object import PooledObject
 from .pooled_object_factory import PooledObjectFactory
@@ -261,7 +262,10 @@ class Pond(object):
         if not name:
             assert factory is not None
             name = factory.factory_name()
-        return len(self.__pooled_object_tree[name]) >= (self.__pooled_object_tree[name].maxlen or 0)
+        return len(self.__pooled_object_tree[name]) >= (
+            self.__pooled_object_tree[name].maxlen or 0
+        )
+
     def is_empty(
         self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
     ) -> bool:
@@ -307,11 +311,7 @@ class Pond(object):
                 await asyncio.sleep(self.__time_between_eviction_runs)
                 continue
             pooled_object_borrow_count: Dict[str, int] = {}
-            max_count = 0
-            for key in self.__pooled_object_tree.keys():
-                pooled_object_borrow_count[key] = self.counter[key]
-                if max_count <= pooled_object_borrow_count[key]:
-                    max_count = pooled_object_borrow_count[key]
+            max_count = 8
             boundary = int(max_count * self.__eviction_weight)
             for key, value in pooled_object_borrow_count.items():
                 size = len(self.__pooled_object_tree[key])

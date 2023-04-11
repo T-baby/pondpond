@@ -1,35 +1,24 @@
 """
-From https://github.com/rafacarrascosa/countminsketch/
-----
-Copyright (c) 2014, Rafael Carrascosa
-All rights reserved.
+Copyright 2022 Andy Qin. All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the Rafael Carrascosa nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+     http://www.apache.org/licenses/LICENSE-2.0
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL RAFAEL CARRASCOSA BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 import array
 import hashlib
 import math
 import typing as t
+from threading import RLock, Thread
+
+import madoka
 
 
 class CountMinSketch(object):
@@ -69,51 +58,32 @@ class CountMinSketch(object):
             )
         self.m: int = m
         self.d: int = d
-        self.n: int = 0
-        self.tables = []
-        for _ in range(d):
-            table = array.array("l", (0 for _ in range(m)))
-            self.tables.append(table)
+        self.sketch = madoka.Sketch(width=m, k=d, max_value=8)
+        self.lock = False
 
-    def _hash(self, x: t.Hashable) -> t.Generator[int, None, None]:
-        md5 = hashlib.md5(str(hash(x)).encode("utf-8"))
-        for i in range(self.d):
-            md5.update(str(i).encode("utf-8"))
-            yield int(md5.hexdigest(), 16) % self.m
-
-    def add(self, x: t.Hashable, value: int = 1) -> None:
+    def add(self, x: t.Hashable) -> None:
         """
         Count element `x` as if had appeared `value` times.
-        By default `value=1` so:
-            sketch.add(x)
         Effectively counts `x` as occurring once.
         """
-        if isinstance(x, str):
-            x = x.encode("utf-8")
-        self.n += value
-        for table, i in zip(self.tables, self._hash(x)):
-            table[i] += value
-            if table[i] >= 8:
-                for table in self.tables:
-                    for i, v in enumerate(table):
-                        table[i] = math.ceil(v / 2)
+        count = self.sketch[x]
+        self.sketch[x] = count + 1
+        if count >= 8:
+            if not self.lock:
+                self._clean()
+
+    def _clean(self) -> None:
+        self.sketch.filter(lambda x: math.floor(x / 2))
 
     def query(self, x: t.Hashable) -> int:
         """
         Return an estimation of the amount of times `x` has ocurred.
         The returned value always overestimates the real value.
         """
-        return min(table[i] for table, i in zip(self.tables, self._hash(x)))
+        return self.sketch.get(x)
 
     def __getitem__(self, x: t.Hashable) -> int:
         """
         A convenience method to call `query`.
         """
-        return self.query(x)
-
-    def __len__(self) -> int:
-        """
-        The amount of things counted. Takes into account that the `value`
-        argument of `add` might be different from 1.
-        """
-        return self.n
+        return self.sketch.get(x)
