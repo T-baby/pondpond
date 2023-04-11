@@ -42,7 +42,8 @@ class Pond(object):
             borrowed_timeout (int, optional): The maximum duration of the
                 borrowed object. Defaults to 60.
             time_between_eviction_runs (int, optional): The interval for
-                automatic recycling. Defaults to 300.
+                automatic recycling. Defaults to 300. If its value is -1,
+                the recycling is turned off.
             eviction_weight (float, optional): Automatic recycling weight.
                 Defaults to 0.8.
             thread_daemon (bool, optional): A boolean value indicating whether
@@ -71,11 +72,12 @@ class Pond(object):
             loop.create_task(function)
             loop.run_forever()
 
-        self.__thread = Thread(
-            target=loop_runner, args=(self.__loop, self.__eviction())
-        )
-        self.__thread.daemon = thread_daemon
-        self.__thread.start()
+        if self.__time_between_eviction_runs > -1:
+            self.__thread = Thread(
+                target=loop_runner, args=(self.__loop, self.__eviction())
+            )
+            self.__thread.daemon = thread_daemon
+            self.__thread.start()
 
     def register(
         self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
@@ -129,7 +131,8 @@ class Pond(object):
             assert factory is not None
             name = factory.factory_name()
         if self.is_empty(name=name):
-            self.counter.add(name)
+            if self.__time_between_eviction_runs > -1:
+                self.counter.add(name)
             return self.__class_dict[name].creatInstantce()
         pooled_object = self.__pooled_object_tree[name].pop()
         while not self.__class_dict[name].validate(pooled_object):
@@ -138,7 +141,8 @@ class Pond(object):
                 pooled_object = self.__class_dict[name].creatInstantce()
             else:
                 pooled_object = self.__pooled_object_tree[name].pop()
-        self.counter.add(name)
+        if self.__time_between_eviction_runs > -1:
+            self.counter.add(name)
         return pooled_object.update_brrow_time()
 
     def recycle(

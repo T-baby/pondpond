@@ -31,7 +31,7 @@ class PooledDogFactory(PooledObjectFactory):
 pooled_maxsize = 10
 pond = Pond(
     borrowed_timeout=2,
-    time_between_eviction_runs=-1,
+    time_between_eviction_runs=300,
     thread_daemon=True,
     eviction_weight=0.8,
 )
