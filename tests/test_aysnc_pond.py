@@ -1,6 +1,5 @@
 import asyncio
 import time
-from distutils.log import debug
 
 import pytest
 

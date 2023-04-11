@@ -37,7 +37,6 @@ pond = Pond(
 )
 factory = PooledDogFactory(pooled_maxsize=10, least_one=False)
 
-
 @pytest.mark.run(order=1)
 def test_register() -> None:
     assert factory.pooled_maxsize == pooled_maxsize
