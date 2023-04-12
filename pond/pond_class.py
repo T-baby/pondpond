@@ -316,6 +316,8 @@ class Pond(object):
                 continue
             pooled_object_borrow_count: Dict[str, int] = {}
             max_count = 8
+            for key in self.__pooled_object_tree.keys():
+                pooled_object_borrow_count[key] = self.counter[key]
             boundary = int(max_count * self.__eviction_weight)
             for key, value in pooled_object_borrow_count.items():
                 size = len(self.__pooled_object_tree[key])
