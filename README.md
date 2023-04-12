@@ -74,7 +74,7 @@ Pond can be passed a number of parameters in:
 
 `borrowed_timeout`: The maximum duration of the borrowed object. Defaults to 60.
 
-`time_between_eviction_runs`: The interval for automatic recycling. Defaults to 300.
+`time_between_eviction_runs`: The interval for automatic recycling. Defaults to 300. If its value is -1, the recycling is turned off.
 
 `thread_daemon`: A boolean value indicating whether the pond's thread is a daemon thread. Defaults to True.
 

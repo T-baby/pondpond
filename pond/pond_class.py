@@ -17,7 +17,7 @@ import math
 import time
 from asyncio import AbstractEventLoop
 from collections import deque
-from threading import Thread
+from threading import Thread,RLock
 from typing import TYPE_CHECKING, Any, Coroutine, Deque, Dict, Final, Optional
 
 from .count_min_sketch import CountMinSketch
@@ -57,6 +57,7 @@ class Pond(object):
         self.__time_between_eviction_runs = time_between_eviction_runs
         self.__eviction_weight = eviction_weight
         self.__async_lock = asyncio.Lock()
+        self.__sync_lock = RLock()
         self.__class_dict: Final[Dict[str, PooledObjectFactory]] = dict()
 
         if TYPE_CHECKING:
@@ -127,23 +128,24 @@ class Pond(object):
         Returns:
             PooledObject: The pooled object you want to borrow.
         """
-        if not name:
-            assert factory is not None
-            name = factory.factory_name()
-        if self.is_empty(name=name):
+        with self.__sync_lock:
+            if not name:
+                assert factory is not None
+                name = factory.factory_name()
+            if self.is_empty(name=name):
+                if self.__time_between_eviction_runs > -1:
+                    self.counter.add(name)
+                return self.__class_dict[name].creatInstantce()
+            pooled_object = self.__pooled_object_tree[name].pop()
+            while not self.__class_dict[name].validate(pooled_object):
+                self.__clear_one_object(pooled_object, name=name)
+                if self.is_empty(name=name):
+                    pooled_object = self.__class_dict[name].creatInstantce()
+                else:
+                    pooled_object = self.__pooled_object_tree[name].pop()
             if self.__time_between_eviction_runs > -1:
                 self.counter.add(name)
-            return self.__class_dict[name].creatInstantce()
-        pooled_object = self.__pooled_object_tree[name].pop()
-        while not self.__class_dict[name].validate(pooled_object):
-            self.__clear_one_object(pooled_object, name=name)
-            if self.is_empty(name=name):
-                pooled_object = self.__class_dict[name].creatInstantce()
-            else:
-                pooled_object = self.__pooled_object_tree[name].pop()
-        if self.__time_between_eviction_runs > -1:
-            self.counter.add(name)
-        return pooled_object.update_brrow_time()
+            return pooled_object.update_brrow_time()
 
     def recycle(
         self,
@@ -160,21 +162,22 @@ class Pond(object):
             name (Optional[str], optional): The factory name you want to register.
                 Defaults to None.
         """
-        if not name:
-            assert factory is not None
-            name = factory.factory_name()
-        if not isinstance(pooled_object, PooledObject):
-            raise ValueError("Only PooledObject can be recycled!")
-        if self.is_full(name=name):
-            self.__clear_one_object(pooled_object, name=name)
-            return
-        if (time.time() - pooled_object.last_borrow_time) > self.__borrowed_timeout:
-            self.__clear_one_object(pooled_object, name=name)
-            return
+        with self.__sync_lock:
+            if not name:
+                assert factory is not None
+                name = factory.factory_name()
+            if not isinstance(pooled_object, PooledObject):
+                raise ValueError("Only PooledObject can be recycled!")
+            if self.is_full(name=name):
+                self.__clear_one_object(pooled_object, name=name)
+                return
+            if (time.time() - pooled_object.last_borrow_time) > self.__borrowed_timeout:
+                self.__clear_one_object(pooled_object, name=name)
+                return
 
-        self.__pooled_object_tree[name].appendleft(
-            self.__class_dict[name].reset(pooled_object)
-        )
+            self.__pooled_object_tree[name].appendleft(
+                self.__class_dict[name].reset(pooled_object)
+            )
 
     def clear(
         self, factory: Optional[PooledObjectFactory] = None, name: Optional[str] = None
