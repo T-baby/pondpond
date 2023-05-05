@@ -23,7 +23,7 @@ class PooledObjectFactory(metaclass=abc.ABCMeta):
         self.least_one = least_one
 
     @abc.abstractmethod
-    def creatInstantce(self) -> PooledObject:
+    def createInstance(self) -> PooledObject:
         pass
 
     @abc.abstractmethod

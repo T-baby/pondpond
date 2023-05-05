@@ -12,7 +12,7 @@ class Dog:
 
 
 class PooledDogFactory(PooledObjectFactory):
-    def creatInstantce(self) -> PooledObject:
+    def createInstance(self) -> PooledObject:
         dog = Dog()
         dog.name = "puppy"
         return PooledObject(dog)

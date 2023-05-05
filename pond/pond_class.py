@@ -17,7 +17,7 @@ import math
 import time
 from asyncio import AbstractEventLoop
 from collections import deque
-from threading import Thread,RLock
+from threading import RLock, Thread
 from typing import TYPE_CHECKING, Any, Coroutine, Deque, Dict, Final, Optional
 
 from .count_min_sketch import CountMinSketch
@@ -108,7 +108,7 @@ class Pond(object):
         self.__class_dict[name] = factory
         self.__pooled_object_tree[name] = deque(maxlen=factory.pooled_maxsize)
         for i in range(factory.pooled_maxsize):
-            instance = self.__class_dict[name].creatInstantce()
+            instance = self.__class_dict[name].createInstance()
             if instance is None:
                 raise ValueError("The instance must not be null!")
             self.__pooled_object_tree[name].appendleft(instance)
@@ -135,12 +135,12 @@ class Pond(object):
             if self.is_empty(name=name):
                 if self.__time_between_eviction_runs > -1:
                     self.counter.add(name)
-                return self.__class_dict[name].creatInstantce()
+                return self.__class_dict[name].createInstance()
             pooled_object = self.__pooled_object_tree[name].pop()
             while not self.__class_dict[name].validate(pooled_object):
                 self.__clear_one_object(pooled_object, name=name)
                 if self.is_empty(name=name):
-                    pooled_object = self.__class_dict[name].creatInstantce()
+                    pooled_object = self.__class_dict[name].createInstance()
                 else:
                     pooled_object = self.__pooled_object_tree[name].pop()
             if self.__time_between_eviction_runs > -1:
