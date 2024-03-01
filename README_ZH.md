@@ -160,6 +160,18 @@ dog: Dog = pooled_object.use()
 pond.recycle(pooled_object, name="PuppyFactory")
 ```
 
+`1.4.1` 版本后支持在还对象时传递自定义参数，参数可以传递给工厂类的 reset 方法：
+
+```python
+class PooledDogFactory(PooledObjectFactory):
+    ...
+    def reset(self, pooled_object: PooledObject, new_name) -> PooledObject:
+        pooled_object.keeped_object.name = new_name
+        return pooled_object
+
+pond.recycle(pooled_object, factory, new_name="kiki")
+```
+
 完全清理一个对象池：
 
 ```python

@@ -126,6 +126,18 @@ dog: Dog = pooled_object.use()
 pond.recycle(pooled_object, name="PuppyFactory")
 ```
 
+The `1.4.1` version supports returning custom parameters that can be passed to the reset method of the factory class:
+
+```python
+class PooledDogFactory(PooledObjectFactory):
+    ...
+    def reset(self, pooled_object: PooledObject, new_name) -> PooledObject:
+        pooled_object.keeped_object.name = new_name
+        return pooled_object
+
+pond.recycle(pooled_object, factory, new_name="kiki")
+```
+
 Clear a object pool:
 
 ```python
