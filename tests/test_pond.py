@@ -1,5 +1,4 @@
 import time
-from distutils.log import debug
 
 import pytest
 
@@ -20,8 +19,8 @@ class PooledDogFactory(PooledObjectFactory):
     def destroy(self, pooled_object: PooledObject) -> None:
         del pooled_object
 
-    def reset(self, pooled_object: PooledObject) -> PooledObject:
-        pooled_object.keeped_object.name = "puppy"
+    def reset(self, pooled_object: PooledObject, new_name="puppy") -> PooledObject:
+        pooled_object.keeped_object.name = new_name
         return pooled_object
 
     def validate(self, pooled_object: PooledObject) -> bool:
@@ -125,10 +124,10 @@ def test_recycle_and_reset() -> None:
     dog: Dog = pooled_object.use()
     assert dog.name == "puppy"
     dog.name = "dinosaurs"
-    pond.recycle(pooled_object, factory)
+    pond.recycle(pooled_object, factory, new_name="cat")
     pooled_object = pond.borrow(factory)
     dog = pooled_object.use()
-    assert dog.name == "puppy"
+    assert dog.name == "cat"
     pond.recycle(pooled_object, factory)
 
 

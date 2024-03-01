@@ -152,15 +152,18 @@ class Pond(object):
         pooled_object: PooledObject,
         factory: Optional[PooledObjectFactory] = None,
         name: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
         """You can use factory object or factory name to borrow and return
             objects from the object pool.
 
         Args:
+            pooled_object (PooledObject): The pooled object you want to recycle.
             factory (Optional[PooledObjectFactory], optional): The factory
                 object you want to register. Defaults to None.
             name (Optional[str], optional): The factory name you want to register.
                 Defaults to None.
+            kwargs (Any): The parameters you want to pass to the reset method.
         """
         with self.__sync_lock:
             if not name:
@@ -175,8 +178,8 @@ class Pond(object):
                 self.__clear_one_object(pooled_object, name=name)
                 return
 
-            self.__pooled_object_tree[name].appendleft(
-                self.__class_dict[name].reset(pooled_object)
+            self.__pooled_object_tree[name].append(
+                self.__class_dict[name].reset(pooled_object, **kwargs)
             )
 
     def clear(
