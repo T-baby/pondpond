@@ -18,6 +18,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
       - run: pip install --upgrade pip
-      - run: pip install pytest
+      - run: pip install pytest pytest-asyncio
       - run: pip install --editable . || true
       - run: pytest
