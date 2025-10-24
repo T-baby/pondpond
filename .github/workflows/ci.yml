@@ -19,5 +19,5 @@ jobs:
           allow-prereleases: true
       - run: python3 -m pip install --upgrade pip
       - run: pip install pytest pytest-asyncio
-      - run: pip install --editable . || true
+      - run: pip install --editable .
       - run: pytest
